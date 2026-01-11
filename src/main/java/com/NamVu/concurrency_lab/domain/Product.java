@@ -1,9 +1,13 @@
 package com.NamVu.concurrency_lab.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "products")
+@Getter
+@Setter
 public class Product {
 
     @Id
@@ -21,10 +25,6 @@ public class Product {
     public Product(String name, int stock) {
         this.name = name;
         this.stock = stock;
-    }
-
-    public int getStock() {
-        return stock;
     }
 
     public void decreaseStock() {
