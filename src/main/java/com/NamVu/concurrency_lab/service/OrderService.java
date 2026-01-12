@@ -1,39 +1,29 @@
 package com.NamVu.concurrency_lab.service;
 
-import com.NamVu.concurrency_lab.domain.Product;
-import com.NamVu.concurrency_lab.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class OrderService {
 
-    private final ProductRepository productRepository;
+    private final OrderTransactionalService txService;
 
-    @Transactional
-    public boolean buy(Long productId) {
-        String thread = Thread.currentThread().getName();
-        log.info("[{}] Start buy", thread);
+    public void buyWithRetry(Long productId) {
+        int maxRetry = 3;
 
-        Product product = productRepository.findByIdForUpdate(productId).orElseThrow();
-
-        log.info("[{}] Current stock = {}", thread, product.getStock());
-
-        if (product.getStock() > 0) {
-            product.decreaseStock();
-
-            log.info("[{}] Stock after decrease = {}", thread, product.getStock());
-
-            productRepository.save(product);
-            log.info("[{}] Buy success", thread);
-            return true;
+        for(int attempt = 1; attempt <= maxRetry; attempt++) {
+            try {
+                txService.buy(productId);
+                return;
+            } catch (ObjectOptimisticLockingFailureException e) {
+                log.warn("Optimistic lock conflict, attempt {}", attempt);
+            }
         }
 
-        log.warn("[{}] Buy failed - out of stock", thread);
-        return false;
+        throw new RuntimeException("Buy failed after retries");
     }
 }

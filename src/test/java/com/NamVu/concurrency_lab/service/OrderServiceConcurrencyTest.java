@@ -31,14 +31,16 @@ public class OrderServiceConcurrencyTest {
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger failCount = new AtomicInteger();
 
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
-                    boolean success = orderService.buy(productId);
-                    if (success) {
-                        successCount.incrementAndGet();
-                    }
+                    orderService.buyWithRetry(productId);
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    log.warn("Optimistic lock conflict");
+                    failCount.incrementAndGet();
                 } finally {
                     latch.countDown();
                 }
@@ -51,6 +53,7 @@ public class OrderServiceConcurrencyTest {
 
         log.info("===== RESULT =====");
         log.info("Success orders = {}", successCount.get());
+        log.info("Fail orders = {}", failCount.get());
         log.info("Final stock = {}", product.getStock());
     }
 }
