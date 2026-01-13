@@ -18,5 +18,6 @@ public class UpdateService {
     public void decreaseStock() {
         Product p = productRepository.findAll().getFirst();
         p.decreaseStock();
+        log.info("Stock updated to {}", p.getStock());
     }
 }

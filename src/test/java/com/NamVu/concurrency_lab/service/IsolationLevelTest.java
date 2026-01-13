@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Slf4j
@@ -20,23 +20,28 @@ public class IsolationLevelTest {
     private UpdateService updateService;
 
     @Test
-    void non_repeatable_read_should_happen() throws Exception {
+    void repeatable_read_across_transactions() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch latch = new CountDownLatch(2);
 
-        // TX 1
-        executor.submit(() -> readService.readOnce("First"));
+        executor.submit(() -> {
+            try {
+                readService.readTwice(); // TX 1
+            } finally {
+                latch.countDown();
+            }
+        });
 
-        Thread.sleep(1000);
+        Thread.sleep(1000); // đảm bảo read lần 1 xong
 
-        // TX 2
-        executor.submit(() -> updateService.decreaseStock());
+        executor.submit(() -> {
+            try {
+                updateService.decreaseStock(); // TX 2
+            } finally {
+                latch.countDown();
+            }
+        });
 
-        Thread.sleep(1000);
-
-        // TX 3
-        executor.submit(() -> readService.readOnce("Second"));
-
-        executor.shutdown();
-        executor.awaitTermination(10, TimeUnit.SECONDS);
+        latch.await();
     }
 }
