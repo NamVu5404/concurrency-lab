@@ -19,6 +19,12 @@ public class IsolationLevelTest {
     @Autowired
     private UpdateService updateService;
 
+    @Autowired
+    private ProductReadService productReadService;
+
+    @Autowired
+    private ProductInsertService productInsertService;
+
     @Test
     void repeatable_read_across_transactions() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -37,6 +43,33 @@ public class IsolationLevelTest {
         executor.submit(() -> {
             try {
                 updateService.decreaseStock(); // TX 2
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        latch.await();
+    }
+
+    @Test
+    void phantom_read_should_happen() throws Exception {
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch latch = new CountDownLatch(2);
+
+        executor.submit(() -> {
+            try {
+                productReadService.readCountTwice();
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        Thread.sleep(1000);
+
+        executor.submit(() -> {
+            try {
+                productInsertService.insertProduct();
             } finally {
                 latch.countDown();
             }
