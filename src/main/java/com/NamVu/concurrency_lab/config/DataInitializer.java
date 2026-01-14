@@ -14,6 +14,6 @@ public class DataInitializer {
 
     @PostConstruct
     public void init() {
-        productRepository.save(new Product("Iphone", 1));
+        productRepository.save(new Product("Iphone", 10));
     }
 }

@@ -18,6 +18,9 @@ public class Product {
 
     private int stock;
 
+    @Version
+    private Long version;
+
     public Product() {
 
     }
