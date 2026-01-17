@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Slf4j
@@ -35,5 +36,8 @@ public class LockWaitTest {
 
         Product product = productRepository.findById(1L).orElseThrow();
         log.info("Stock after updated = {}", product.getStock());
+
+        executor.shutdown();
+        executor.awaitTermination(60, TimeUnit.SECONDS);
     }
 }

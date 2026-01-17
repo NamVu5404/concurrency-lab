@@ -21,7 +21,7 @@ public class LockHolderService {
 
         log.info("TX1: Got lock, sleeping...");
         try {
-            Thread.sleep(10000); // giữ lock 10s
+            Thread.sleep(60000); // giữ lock 60s
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
